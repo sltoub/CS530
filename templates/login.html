@@ -1,0 +1,30 @@
+<!--Steven Toub CS530-900 Semester Project-->
+{% extends 'base.html' %}
+{% set active = 'Login' %}
+
+{% block title %}
+Login
+{% endblock %}
+
+{% block content %}
+
+<h1>Login</h1>
+<p4>Please see the about page for more info...</p4>
+
+<body>
+
+    {% if message %}
+    <div class="alert alert-danger">
+        {{ message }}
+    </div>
+    {% endif %}
+    
+    <form action = "/login" method = "POST">
+        <p>Username: </p>
+        <p><input type="text" name = "username" /></p>
+        <p>Password: </p>
+        <p><input type="text" name = "password" /></p>
+        <p><input type = "submit" value="Login" /></p>
+    </form>
+</body>
+{% endblock %}

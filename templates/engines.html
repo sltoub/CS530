@@ -1,0 +1,523 @@
+<!--Steven Toub CS530-900 Semester Project-->
+{% extends 'base.html' %}
+{% set active = 'Engines' %}
+
+{% block title %}
+Engines
+{% endblock %}
+
+{% block content %}
+
+<script src="public\js\functions.js"></script>
+
+<h1>Engines Listing</h1>
+
+<table class="table table-hover" id="enginesTable">
+    <thead>
+        <th scope="col">Engine Number</th>
+        <th scope="col">Number of Items in Inventory</th>
+        <th scope="col">Number of Items Overdue for Inspection</th>
+    </thead>
+
+    <tbody id="enginesTableBody">
+
+        <script>
+
+            $(function() {
+
+                $.get("/api/engines", function(retrievedData) {
+
+                    updateEnginesListing(retrievedData,"#enginesTableBody");
+                });
+            });
+
+        </script>
+
+    </tbody>
+<!------------------------------------------------------------------------------------------------>
+    <script>
+        $('#enginesTableBody').on('click', 'tr', function() {
+            $("#openEngineModal").modal("show");
+            $("#txtEID").text($(this).closest('tr').children()[0].textContent);
+            $("#txtAddEID").text($(this).closest('tr').children()[0].textContent);
+            $("#engineInventoryBody").empty();
+
+            var engineIndex = parseInt($(this).closest('tr').children()[0].textContent);
+            updateInventory(engineIndex,"#engineInventoryBody");
+        });
+
+    </script>
+<!------------------------------------------------------------------------------------------------>    
+</table>
+
+<!-- Button and Modal for opening add engine modal ------------------------------------------------------------------------------------>
+<button type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#addEngineModal">Add Engine</button>
+
+<div id="addEngineModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Add an Engine</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="eidInput">Engine Number:</label>
+                <input type="number" class="form-control" id="eidInputBox">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" id="addEngineButton">Add</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        //button functions for adding a new fire engine to inventory
+        $('#addEngineButton').on('click', function() {
+            
+            $(function() {
+
+                $.get("/api/engines", function(retrievedData) {
+
+                    checkCurrentEngines(retrievedData)
+                });
+            });
+
+            //validate that engine number has not already been used and is a positive integer
+            function checkCurrentEngines(retrievedData){
+
+                var currentEngines = new Array();
+
+                for(var i = 0; i < retrievedData.length; i++){
+
+                    var item = retrievedData[i];
+
+                    if(!(currentEngines.includes(item.eid))){
+
+                        currentEngines.push(item.eid);
+                    }
+                }
+
+                var proposedEngine = parseInt($('#eidInputBox').val());
+
+                if(currentEngines.includes(proposedEngine) || proposedEngine < 1 || isNaN(proposedEngine)){
+                    alert("Engine already exists or an invalid identifier has been entered!");
+                }
+                else{
+                    addItem(proposedEngine,"0","0","0",0);
+                    $("#enginesTableBody").empty();
+                    $("#addEngineModal").modal('hide');
+                    $('#eidInputBox').val('');
+                    $(function() {
+
+                        $.get("/api/engines", function(retrievedData) {
+
+                            updateEnginesListing(retrievedData,"#enginesTableBody");
+                        });
+                    });
+                }
+            }
+        });
+
+    </script>
+</div>
+
+<!----------------------------------------------------------------------------------------------->
+<!-- Modal for a particular engine inventory -->
+
+<div id="openEngineModal" class="modal fade" role="dialog">
+    <div class="modal-dialog" style="overflow-y: scroll">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>Engine <span class="label label-default" id="txtAddEID"></span></h4>
+                
+                <button type="button" class="close" data-dismiss="modal" id="closeEngineInventoryBtn1">&times;</button>
+            </div>
+            <div class="modal-body">
+
+                <!--search bar-->
+                <input type="text" id="inventorySearch" placeholder="Search Item Names...">
+                <button type="button" class="btn btn-outline-light btn-sm col-sm-3 col-sm-offset-2" id="sortDateBtn">Sort By Date</button>
+
+                <table class="table table-hover" id="EngineInventory">
+
+                    <thead>
+                        <th scope="col">Item</th>
+                        <th scope="col">Recertify Date</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Quantity on Engine</th>
+                    </thead>
+
+                    <tbody id="engineInventoryBody"></tbody>
+
+                </table>
+
+            </div>
+            <div class="modal-footer">
+
+                <button type="button" class="btn btn-default" data-dismiss="modal" id="closeEngineInventoryBtn2">Close</button>
+                <button type="button" class="btn btn-default" id="openAddModalBtn">Add Item</button>
+                <button type="button" class="btn btn-default" id="deleteEngineBtn">Delete Engine</button>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        //sorts descending dates in inventory table with button click--------------------------------------------------------------------
+        $('#sortDateBtn').on('click', function() {
+            sortByDate();
+        });
+
+        function splitDate(d) {
+            var p = d.split("-");
+            return (p[0]+p[1]+p[2]);
+        }
+
+        function sortByDate() {
+            var tableBody = document.querySelector('#engineInventoryBody');
+
+            var rows = [].slice.call(tableBody.querySelectorAll("tr"));
+  
+            rows.sort(function(a,b) {
+                return splitDate(a.cells[1].innerHTML) - splitDate(b.cells[1].innerHTML);
+            });
+  
+            rows.forEach(function(c) {
+                tableBody.appendChild(c);
+            });
+        }
+        //----------------Delete an entire engine and its inventory--------------------------------------------------------------------
+
+        $('#deleteEngineBtn').on('click', function(){
+
+            var eidIndex = parseInt(($('#txtEID').text()));
+            
+            deleteEngine(eidIndex);
+
+            $("#openEngineModal").modal('hide');
+
+            $(function() {
+
+                $("#enginesTableBody").empty();
+                
+                $.get("/api/engines", function(retrievedData) {
+                    updateEnginesListing(retrievedData,"#enginesTableBody");
+                });
+            });
+        });
+
+        $('#openAddModalBtn').on('click', function(){
+
+            $('#addItemModal').modal('show');
+        });
+        //-------------------------------------------------------------------------------------
+        //-----------event for clicking on an item in an engines inventory---------------------
+
+        $('#engineInventoryBody').on('click', 'tr', function() {
+            $("#editItemModal").modal("show");
+
+            var eidEditable = $('#txtAddEID').text();
+
+            $("#txtEditEID").text($(this).closest('tr').children()[0].textContent + ' on Engine ' + eidEditable);
+
+            var editableName = $(this).closest('tr').children()[0].textContent;
+            var editableDate = $(this).closest('tr').children()[1].textContent;
+            var editableStatus = $(this).closest('tr').children()[2].textContent;
+            var editableQuantity = $(this).closest('tr').children()[3].textContent;
+
+           $('#nameEditBox').val(editableName);
+           $('#dateEditBox').val(editableDate);
+           $('#statusEdit').val(editableStatus);
+           $('#quantityEditBox').val(editableQuantity);
+
+           $('#nameEditHide').text(editableName);
+           $('#dateEditHide').text(editableDate);
+           $('#statusEditHide').text(editableStatus);
+           $('#quantityEditHide').text(editableQuantity);
+
+        });
+
+        //---------------------------------------------------------------------------------------
+        //update engines listing after closing inventory opt1
+        $('#closeEngineInventoryBtn1').on('click', function() {
+
+            $(function() {
+
+                $.get("/api/engines", function(retrievedData) {
+
+                    $("#enginesTableBody").empty();
+                    updateEnginesListing(retrievedData,"#enginesTableBody");
+                });
+            });
+        });
+
+        //update engines listing after closing inventory opt2
+        $('#closeEngineInventoryBtn2').on('click', function() {
+
+            $(function() {
+
+                $.get("/api/engines", function(retrievedData) {
+
+                    $("#enginesTableBody").empty();
+                    updateEnginesListing(retrievedData,"#enginesTableBody");
+                });
+            });
+        });
+
+        //search function----------------------------------------------------
+        $(document).ready(function(){
+            $("#inventorySearch").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#EngineInventory tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+        });
+        
+    </script>
+</div>
+<!----------------------------------------------------------------------------------------------->
+<!--Modal for adding an item-->
+
+<div id="addItemModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>Add an Item to Engine <span class="label label-default" id="txtEID"></span></h4>
+                <button type="button" class="close" data-dismiss="modal" id="closeAddMenuBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-group row">
+                    <label class="col-sm-4 col-sm-offset-2" for="nameInputBox">Item Name:</label>
+                    <div class="col-sm-6 col-sm-offset-2">
+                        <input type="text" class="form-control" id="nameInputBox">
+                    </div>
+                </div>
+                
+                <div class="form-group row">
+                    <label class="col-sm-4 col-sm-offset-2" for="dateInputBox">Recertify Date:</label>
+                    <div class="col-sm-6 col-sm-offset-2">
+                      <input class="form-control" type="date" value="" id="dateInputBox">
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-sm-4 col-sm-offset-2" for="statusInput">Status: </label>
+                    <select class="form-control col-sm-6 col-sm-offset-2" id="statusInput">
+                      <option>Operable</option>
+                      <option>Inoperable</option>
+                      <option>Damaged</option>
+                    </select>
+                  </div>
+
+                <div class="form-group row">
+                    <label class="col-sm-4 col-sm-offset-2" for="quantityInputBox">Item Quantity:</label>
+                    <div class="col-sm-6 col-sm-offset-2">
+                        <input type="number" class="form-control" id="quantityInputBox">
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" id="addItemButton">Add</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        //button action and functions for adding a new item
+        $('#addItemButton').on('click', function(){
+
+            //collects user inputs
+            var eidInput = parseInt(($('#txtAddEID').text()));
+            var nameInput = $('#nameInputBox').val();
+            var dateInput = $('#dateInputBox').val();
+            var statusInput = $('#statusInput').val();
+            var quantityInput = $('#quantityInputBox').val();
+            
+            if(nameInput == null || nameInput == ''){
+                alert("Name cannot be blank!");
+            }
+            else if(dateInput == null || dateInput == ''){
+                alert("Date cannot be blank!");
+            }
+            else if(quantityInput < 1 || isNaN(quantityInput)) {
+                alert("Quantity must be greater than 1 and must be a number!");
+            }
+            else if(statusInput == null || statusInput == ''){
+                alert("Select a status!");
+            }
+
+            else{
+                addItem(eidInput,nameInput,dateInput,statusInput,quantityInput);
+
+                $('#addItemModal').modal('hide');
+
+                //resets input fields
+                $('#nameInputBox').val('');
+                $('#dateInputBox').val('');
+                $('#statusInput').val('');
+                $('#quantityInputBox').val('');
+
+                $(function() {
+
+                    $.get("/api/engines", function(retrievedData) {
+
+                        $("#enginesTableBody").empty();
+                        updateEnginesListing(retrievedData,"#enginesTableBody");
+                        $('#engineInventoryBody').empty();
+                        updateInventory(eidInput,"#engineInventoryBody");
+                    });
+                });
+            }
+        });
+        
+    </script>
+</div>
+
+<!------------------Modal for editing an item------------------------------------------------------------------>
+<div id="editItemModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>Edit <span class="label label-default" id="txtEditEID"></span></h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-group row">
+                    <label class="col-sm-4 col-sm-offset-2" for="nameEditBox">Item Name:</label>
+                    <div class="col-sm-6 col-sm-offset-2">
+                        <input type="text" class="form-control" id="nameEditBox">
+                    </div>
+                </div>
+                
+                <div class="form-group row">
+                    <label class="col-sm-4 col-sm-offset-2" for="dateEditBox">Recertify Date:</label>
+                    <div class="col-sm-6 col-sm-offset-2">
+                      <input class="form-control" type="date" value="" id="dateEditBox">
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-sm-4 col-sm-offset-2" for="statusEdit">Status:</label>
+                    <select class="form-control col-sm-6 col-sm-offset-2" id="statusEdit">
+                      <option>Operable</option>
+                      <option>Inoperable</option>
+                      <option>Damaged</option>
+                    </select>
+                  </div>
+
+                <div class="form-group row">
+                    <label class="col-sm-4 col-sm-offset-2" for="quantityEditBox">Item Quantity:</label>
+                    <div class="col-sm-6 col-sm-offset-2">
+                        <input type="number" class="form-control" id="quantityEditBox">
+                    </div>
+                </div>
+
+                <p class="hiddenEdit" id="nameEditHide"></p>
+                <p class="hiddenEdit" id="dateEditHide"></p>
+                <p class="hiddenEdit" id="statusEditHide"></p>
+                <p class="hiddenEdit" id="quantityEditHide"></p>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" id="editItemButton">Save</button>
+                <button type="button" class="btn btn-default" id="delItemButton">Delete</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        //---------script for saving changes made to an item in inventory-----------------------------------------------------------
+        $('#editItemButton').on('click', function(){
+
+            var nameOrig = $('#nameEditHide').text();
+            var dateOrig = $('#dateEditHide').text();
+            var statusOrig = $('#statusEditHide').text();
+            var quantityOrig = $('#quantityEditHide').text();
+
+            //collects edited data
+            var eidEditable = parseInt(($('#txtAddEID').text()));
+
+            var nameEdit = $('#nameEditBox').val();
+            var dateEdit = $('#dateEditBox').val();
+            var statusEdit = $('#statusEdit').val();
+            var quantityEdit = $('#quantityEditBox').val();
+
+            if(nameEdit == null || nameEdit == ''){
+                alert("Name cannot be blank!");
+            }
+            else if(dateEdit == null || dateEdit == ''){
+                alert("Date cannot be blank!");
+            }
+            else if(quantityEdit < 1 || isNaN(quantityEdit)) {
+                alert("Quantity must be greater than 1 and must be a number!");
+            }
+            else if(statusEdit == null || statusEdit == ''){
+                alert("Select a status!");
+            }
+
+            else{
+                modifyItem(eidEditable,nameEdit,dateEdit,statusEdit,quantityEdit,eidEditable,nameOrig,dateOrig,statusOrig,quantityOrig);
+
+                $('#editItemModal').modal('hide');
+
+                //resets input fields
+                $('#nameEditBox').val('');
+                $('#dateEditBox').val('');
+                $('#statusEdit').val('');
+                $('#quantityEditBox').val('');
+
+                $(function() {
+
+                    $.get("/api/engines", function(retrievedData) {
+
+                        $("#enginesTableBody").empty();
+                        updateEnginesListing(retrievedData,"#enginesTableBody");
+                        $('#engineInventoryBody').empty();
+                        updateInventory(eidEditable,"#engineInventoryBody");
+                    });
+                });
+            }
+        });
+
+        //----------------------------------------------------------------------------------------------------------------------------
+
+        //-----------script for deleting an item from inventory-----------------------------------------------------------------------
+        $("#delItemButton").on('click', function(){
+
+            var nameDel = $('#nameEditHide').text();
+            var dateDel = $('#dateEditHide').text();
+            var statusDel = $('#statusEditHide').text();
+            var quantityDel = $('#quantityEditHide').text();
+
+            var eidDelIndex = parseInt(($('#txtAddEID').text()));
+
+            deleteItem(eidDelIndex,nameDel,dateDel,statusDel,quantityDel);
+
+            $('#editItemModal').modal('hide');
+
+            $(function() {
+
+                $.get("/api/engines", function(retrievedData) {
+
+                    $("#enginesTableBody").empty();
+                    updateEnginesListing(retrievedData,"#enginesTableBody");
+                    $('#engineInventoryBody').empty();
+                    updateInventory(eidDelIndex,"#engineInventoryBody");
+                });
+            });
+        });
+
+    </script>
+</div>
+{% endblock %}

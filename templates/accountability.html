@@ -1,0 +1,53 @@
+<!--Steven Toub CS530-900 Semester Project-->
+{% extends 'base.html' %}
+{% set active = 'Accountability' %}
+
+{% block title %}
+Accountability
+{% endblock %}
+
+{% block content %}
+
+<script src="public\js\functions.js"></script>
+
+<h2>Log of Inventory Modification</h2>
+<input type="text" id="accessSearch" placeholder="Search Actions...">
+
+<table class="table table-bordered" id="accessTable">
+    <thead>
+        <th scope="col">Date</th>
+        <th scope="col">Username</th>
+        <th scope="col">Action</th>
+    </thead>
+
+    <tbody id="accessTableBody">
+
+        <script>
+
+            $(function() {
+
+                $.get("/api/access", function(retrievedData) {
+
+                    updateAccess(retrievedData,"#accessTableBody");
+                });
+            });
+
+        </script>
+
+    </tbody>
+
+    <script>
+            //search function----------------------------------------------------
+            $(document).ready(function(){
+                $("#accessSearch").on("keyup", function() {
+                    var value = $(this).val().toLowerCase();
+                    $("#accessTable tr").filter(function() {
+                        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                    });
+                });
+            });
+    </script>
+
+</table>
+
+{% endblock %}

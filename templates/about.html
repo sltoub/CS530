@@ -1,0 +1,23 @@
+<!--Steven Toub CS530-900 Semester Project-->
+{% extends 'base.html' %}
+{% set active = 'About' %}
+
+{% block title %}
+About
+{% endblock %}
+
+{% block content %}
+
+    <h1>About</h1>
+    <p>This website keeps track of fire engine inventories and equipment certification dates.</p>
+
+    <p>From my understanding of my local fire departments, accounts would be created by County IT and issued to relevant
+        parties. For the purposes of this demonstration, I've only created one account in the users database. 
+        Simply log in using 'admin' and 'password' to access the system.
+    </p>
+    <p>
+        If a table row highlights when you hover over it, it is clickable. If you are using Microsoft Edge, it will not
+        support the highlighting of rows, but they are still clickable.
+    </p>
+    
+{% endblock %}

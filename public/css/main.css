@@ -1,0 +1,77 @@
+/* Steven Toub CS530-900 Semester Project */
+body {
+    font-family: "Arial";
+    font-size: 1rem;
+    background: #fff;
+}
+
+header {
+    background: #da0505;
+}
+
+.navbar-expand-md .navbar-nav .nav-link {
+    padding-left: 1.5rem;
+    padding-right: 1rem;
+    color: #ffffff
+}
+
+.content {
+    padding: 2rem 1.5rem;
+}
+
+.jumbotron {
+    padding: 1.5rem;
+    background: 0;
+}
+
+.overdueRow {
+
+    color: #da0505;
+}
+
+.indexUpcoming {
+
+    text-align: center;
+}
+
+.btn {
+    background: #da0505;
+    border-color: #000000;
+    color: #ffffff !important;
+}
+
+.btn:hover {
+    background: #ffffff;
+    border-color: #000000;
+    color: #000000 !important;
+}
+
+h4 {
+    margin-left: 0;
+    margin-right:0;
+}
+
+p.hiddenEdit {
+    display:none;
+}
+
+.modal-header {
+    background: #da0505;
+    color: #ffffff;
+}
+
+#inventorySearch {
+    margin-bottom: 10px;
+}
+
+#accessSearch {
+    margin-bottom: 10px;
+}
+
+.modal-dialog{
+    overflow-y: initial !important
+}
+.modal-body{
+    height: 400px;
+    overflow-y: auto;
+}

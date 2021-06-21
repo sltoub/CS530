@@ -1,0 +1,92 @@
+<!--Steven Toub
+cs53--900 Semester Project-->
+
+{% extends 'base.html' %}
+{% set active = 'Home' %}
+
+{% block title %}
+Home
+{% endblock %}
+
+{% block content %}
+
+<h1>Upcoming or Overdue Expirations or Recertifications</h1>
+
+<table class="table table-bordered" id="indexUpcoming">
+    <thead>
+        <th scope="col">Item</th>
+        <th scope="col">On Engine</th>
+        <th scope="col">Recertify Date</th>
+    </thead>
+
+    <tbody id="indexBody">
+
+        <script>
+
+            $(function() {
+
+                $.get("/api/engines", function(retrievedData){
+
+                    updateIndexUpcoming(retrievedData);
+                });
+            });
+
+            //populates tablw with upcoming certification dates that are at most one week away or overdue
+            function updateIndexUpcoming(retrievedData){
+
+                for(var i = 0; i < retrievedData.length; i++) {
+                    
+                    //window for upcoming: one week
+                    var todaysDate = new Date();
+                    var oneWeekFromToday = new Date(todaysDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+                    var item = retrievedData[i];
+                    var dateString = item.date;
+                    var itemDate = new Date(dateString);
+
+                    //flow control for populating table
+                    if(itemDate.getTime() > todaysDate.getTime() && itemDate.getTime() < oneWeekFromToday.getTime()){
+
+                        const tableRow = $(`<tr class="upcomingRow"><td>${item.name}</td><td>Engine ${item.eid}</td><td>${item.date}</td></tr>`);
+                
+                        $('#indexBody').append(tableRow);
+                    }
+
+                    else if(itemDate.getTime() < todaysDate.getTime()){
+
+                        const tableRow = $(`<tr class="overdueRow"><td>${item.name}</td><td>Engine ${item.eid}</td><td>${item.date}</td></tr>`);
+                
+                        $('#indexBody').append(tableRow);
+                    }
+                }
+
+                //sorts the homepage upcomings by date
+                sortByDate();
+
+                function splitDate(d) {
+                    var p = d.split("-");
+                    return (p[0]+p[1]+p[2]);
+                }
+
+                function sortByDate() {
+                    var tableBody = document.querySelector('#indexBody');
+
+                    var rows = [].slice.call(tableBody.querySelectorAll("tr"));
+  
+                    rows.sort(function(a,b) {
+                        return splitDate(a.cells[2].innerHTML) - splitDate(b.cells[2].innerHTML);
+                    });
+  
+                    rows.forEach(function(c) {
+                        tableBody.appendChild(c);
+                    });
+                }
+            }
+            
+        </script>
+
+    </tbody>
+
+</table>
+
+{% endblock %}
